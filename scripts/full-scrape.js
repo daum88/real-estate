@@ -2,7 +2,7 @@
  * COMPREHENSIVE SCRAPER — All filters, all pages, all listings
  * 
  * Connect to Chrome: /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug
- * Then: node lib/full-scrape.js [apartments|houses]
+ * Then: node scripts/full-scrape.js [apartments|houses]
  */
 
 const puppeteer = require('puppeteer-extra');

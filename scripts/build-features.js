@@ -6,7 +6,7 @@
  * - comp_count_1km (listing density)
  * - dist_city_center_km (distance to city center)
  * 
- * Run: node lib/build-features.js
+ * Run: node scripts/build-features.js
  */
 
 const fs = require('fs');
@@ -226,7 +226,7 @@ async function main() {
     area: l.area,
     rooms: l.rooms,
     year: l.year,
-    age: l.age || (l.year > 1800 ? 2026 - l.year : null),
+    age: l.age || (l.year > 1800 ? new Date().getFullYear() - l.year : null),
     floor: l.floor,
     floorRatio: l.floorRatio || null,
     roomDensity: l.roomDensity || (l.rooms > 0 && l.area > 0 ? l.rooms / l.area : null),

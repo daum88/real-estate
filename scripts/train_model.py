@@ -1,4 +1,10 @@
-"""AVM v4 — Log transform, POI features, NaN amenities, transaction adjustment"""
+"""Experimental AVM training (v4) — log transform, POI features, NaN amenities.
+
+NOTE: this trains an experimental model (avm_v4.json) that is NOT the deployed
+runtime model. The deployed model is `public/models/avm_v3_all.json`
+(raw €/m² target, reg:absoluteerror, 20 features), loaded by lib/ml-model.js.
+Keep this script as a reference for the next model iteration.
+"""
 import json, os, numpy as np, xgboost as xgb
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_absolute_percentage_error

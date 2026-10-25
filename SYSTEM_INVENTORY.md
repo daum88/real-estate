@@ -64,10 +64,10 @@ We estimate apartment area as: building_area ÷ 26.
 
 | Tool | File | Method |
 |---|---|---|
-| Filter scraper | lib/full-scrape.js | Guarantees fields via KV.ee filter URLs (energy_certs=X, rooms_min=X&rooms_max=X, structure[]=code) |
-| Bulk scraper | lib/full-scrape.js | All pages, extracts full listing data from search results |
-| House scraper | lib/scrape-houses.js | Same as full-scrape but type=house |
-| Rental scraper | lib/scrape-rentals.js | deal_type=2, separate price format |
+| Filter scraper | scripts/full-scrape.js | Guarantees fields via KV.ee filter URLs (energy_certs=X, rooms_min=X&rooms_max=X, structure[]=code) |
+| Bulk scraper | scripts/full-scrape.js | All pages, extracts full listing data from search results |
+| House scraper | scripts/scrape-houses.js | Same as full-scrape but type=house |
+| Rental scraper | scripts/scrape-rentals.js | deal_type=2, separate price format |
 | Manual captcha | Chrome on port 9222 | User solves reCAPTCHA once, scraper connects |
 
 ### How to scrape
@@ -78,10 +78,10 @@ We estimate apartment area as: building_area ÷ 26.
 # 2. In Chrome: go to kv.ee, accept cookies, solve captcha
 
 # 3. Run scraper
-cd /Users/mattiasdaum/kinnisvara-dashboard
-node lib/full-scrape.js apartments   # apartments
-node lib/full-scrape.js houses       # houses
-node lib/scrape-rentals.js           # rentals
+cd kinnisvara-dashboard
+node scripts/full-scrape.js apartments   # apartments
+node scripts/full-scrape.js houses       # houses
+node scripts/scrape-rentals.js           # rentals
 ```
 
 ---
@@ -135,9 +135,8 @@ node lib/scrape-rentals.js           # rentals
 | File | Purpose |
 |---|---|
 | lib/marketplace.ts | Valuation engine, search, stats, all analysis |
-| lib/full-scrape.js | Main scraper (apartments + houses + filters) |
-| lib/scrape-rentals.js | Rental scraper with yield calculation |
-| lib/manual-scrape.js | Original scraper (deprecated, use full-scrape.js) |
+| scripts/full-scrape.js | Main scraper (apartments + houses + filters) |
+| scripts/scrape-rentals.js | Rental scraper with yield calculation |
 | lib/types.ts | All TypeScript interfaces |
 | data/all_listings.json | Main database (19,406 listings) |
 | data/rentals.json | Rental database (2,213 listings) |

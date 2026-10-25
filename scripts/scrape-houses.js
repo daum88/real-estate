@@ -3,7 +3,7 @@
  * Usage:
  *   1. Start Chrome: /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug
  *   2. In Chrome: go to kv.ee, accept cookies, solve captcha
- *   3. Run: node lib/scrape-houses.js
+ *   3. Run: node scripts/scrape-houses.js
  */
 
 const puppeteer = require('puppeteer-extra');

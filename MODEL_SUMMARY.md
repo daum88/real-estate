@@ -25,7 +25,7 @@ XGBoost regression model for automated property valuation in Estonia. Predicts p
 | 1 | area | m² | KV.ee listing |
 | 2 | rooms | count | KV.ee filter pass |
 | 3 | year | built year | KV.ee listing |
-| 4 | age | 2026 - year | Derived |
+| 4 | age | currentYear - year | Derived |
 | 5 | floorRatio | floor/totalFloors | KV.ee listing |
 | 6 | roomDensity | rooms/area | Derived |
 | 7 | energyNum | A=1..H=8 | KV.ee filter pass |

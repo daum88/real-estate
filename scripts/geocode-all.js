@@ -2,7 +2,7 @@
  * Batch In-ADS Geocoding — assigns exact WGS84 coordinates to every listing.
  * Rate-limited to ~20 req/sec (50ms delay) to respect Maa-amet infrastructure.
  * 
- * Run: node lib/geocode-all.js
+ * Run: node scripts/geocode-all.js
  */
 
 const fs = require('fs');

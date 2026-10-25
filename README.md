@@ -30,7 +30,7 @@ market valuation.
 - Predicts €/m² from 20 features: area, rooms, year, energy class, location, comparable prices, amenities, …
 - 5-fold cross-validation: **MAPE ~28.7%** vs **60.3%** for a comparable-average baseline (~52% better)
 - Runtime model: `public/models/avm_v3_all.json` (~1,200 trees), evaluated in JS by `lib/ml-model.js`
-- Training: XGBoost — feature engineering in `lib/build-features.js`, training script in `lib/train_model.py`
+- Training: XGBoost — feature engineering in `scripts/build-features.js`; `scripts/train_model.py` is an experimental v4 iteration (the deployed model is `avm_v3_all.json`)
 
 ## Data sources
 
@@ -43,6 +43,9 @@ market valuation.
 | e-Äriregister | KÜ health, tax debt, developer info |
 | GTFS / EHIS / municipal plans | transit, schools, planning data |
 | PRIA | agricultural parcels |
+
+The KV.ee listings are scraped from public search-result pages for this portfolio project and are
+included so the app runs out of the box.
 
 ## API routes
 
@@ -63,12 +66,13 @@ Open http://localhost:3000.
 
 The runtime data (`data/all_listings.json`, `data/rentals.json`) and the trained model
 (`public/models/avm_v3_all.json`) are included, so the app works out of the box. Re-scraping uses
-the scripts in `lib/` (KV.ee detail pages are reCAPTCHA-protected, which is why some fields are
+the scripts in `scripts/` (KV.ee detail pages are reCAPTCHA-protected, which is why some fields are
 estimated).
 
 ## Known limitations
 
 - AVM MAPE ~28.7% — trained on asking prices only, not transaction prices
+- The AVM is conservative: residual corrections are small, so predictions stay close to the median €/m² (~€2,844)
 - Only ~63% of listings have precise In-ADS coordinates
 - KV.ee detail pages are reCAPTCHA-protected, so heating type, exact room count and broker info
   are unavailable for most listings
