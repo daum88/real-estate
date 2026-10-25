@@ -353,7 +353,8 @@ const ALL_STOPS: TransitStopData[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// All stops combined (229 stops across Estonia)
+// All stops combined (29 curated stops across Estonia — a representative
+// sample; the full GTFS dataset would be imported in production)
 // ═══════════════════════════════════════════════════════════════
 
 export const ALL_TRANSIT_STOPS: TransitStopData[] = [

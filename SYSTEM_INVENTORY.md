@@ -16,7 +16,7 @@
 | priceEur / monthlyRent | 100% | 99.6% | Search result table column |
 | area (m²) | 100% | 100% | Search result table column |
 | pricePerSqm / rentPerSqm | 100% | 100% | Calculated or table |
-| rooms | 99% | <1% | Filter passes (rooms_min=X&rooms_max=X) |
+| rooms | 7.7% (1,505) | <1% | Filter passes (rooms_min=X&rooms_max=X) — most passes were not merged into the final dataset |
 | floor | 96% | ~70% | Regex "Korrus X/Y" |
 | year (built) | 89% | ~70% | Regex "ehitusaasta 1995" |
 | material | 70% | ~70% | Filter passes (structure[]=code) + regex |
@@ -29,6 +29,10 @@
 
 ### What's blocked
 KV.ee individual listing pages have reCAPTCHA. Cannot access: heating type, energy class (rentals), room count (rentals), full descriptions, broker info, cadastral numbers.
+
+**Rooms caveat:** despite filter-pass scraping, only ~7.7% of the final sale listings
+carry a room count — room-count features in the AVM and "same room count" comparables
+are therefore sparse.
 
 ---
 

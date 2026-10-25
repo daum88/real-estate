@@ -19,20 +19,42 @@ function fmtEur(n: number): string {
 
 export default function InvestmentCard({ address, estimatedValue, buildingArea, delay = 0 }: InvestmentProps) {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{
+    investment?: {
+      estimatedMonthlyRent?: number;
+      grossYield?: number | null;
+      cashOnCashReturn?: number | null;
+      breakEvenYears?: number | null;
+      monthlyCashFlow?: number | null;
+      downPayment30pct?: number;
+      monthlyMortgage?: number;
+    };
+  } | null>(null);
 
   useEffect(() => {
     if (!address || !estimatedValue) return;
-    setLoading(true);
-    fetch('/api/valuate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, area: buildingArea || 60 }),
-    })
-      .then(r => r.json())
-      .then(d => { if (d.success) setData(d.data); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+
+    const controller = new AbortController();
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/valuate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({ address, area: buildingArea || 60 }),
+        });
+        const json = await res.json();
+        if (!controller.signal.aborted && json.success) setData(json.data);
+      } catch {
+        // Aborted or network failure — keep previous state.
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => controller.abort();
   }, [address, estimatedValue, buildingArea]);
 
   const inv = data?.investment;
@@ -71,7 +93,7 @@ export default function InvestmentCard({ address, estimatedValue, buildingArea, 
                 <span className="text-xs font-medium text-emerald-700 font-[family-name:var(--font-body)]">Est. Monthly Rent</span>
               </div>
               <span className="text-lg font-bold text-emerald-800 font-[family-name:var(--font-heading)]">
-                {fmtEur(inv.estimatedMonthlyRent)}/mo
+                {fmtEur(inv.estimatedMonthlyRent || 0)}/mo
               </span>
             </div>
           </div>

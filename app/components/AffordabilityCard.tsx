@@ -2,11 +2,17 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Search, ExternalLink, Home } from 'lucide-react';
+import { DollarSign, ExternalLink, Home } from 'lucide-react';
+import type { MarketplaceListing } from '@/lib/types';
 
 interface AffordabilityProps {
   initialBudget?: number;
   delay?: number;
+}
+
+interface AffordabilityResult {
+  summary: string;
+  possibleListings: MarketplaceListing[];
 }
 
 function fmtEur(n: number): string {
@@ -18,7 +24,7 @@ function fmtEur(n: number): string {
 export default function AffordabilityCard({ initialBudget, delay = 0 }: AffordabilityProps) {
   const [budget, setBudget] = useState(initialBudget || 150000);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ summary: string; possibleListings: any[] } | null>(null);
+  const [result, setResult] = useState<AffordabilityResult | null>(null);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -56,7 +62,7 @@ export default function AffordabilityCard({ initialBudget, delay = 0 }: Affordab
           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-400" />
           <input
             type="number"
-            value={budget}
+            value={Number.isFinite(budget) ? budget : ''}
             onChange={e => setBudget(Number(e.target.value))}
             placeholder="Enter budget"
             className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-teal-50/50 border border-teal-200/40 text-teal-900 text-sm font-[family-name:var(--font-body)] focus:outline-none focus:border-teal-400"
@@ -64,7 +70,7 @@ export default function AffordabilityCard({ initialBudget, delay = 0 }: Affordab
         </div>
         <button
           onClick={handleSearch}
-          disabled={loading || budget < 1000}
+          disabled={loading || !Number.isFinite(budget) || budget < 1000}
           className="px-5 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-semibold hover:bg-rose-600 disabled:opacity-40 transition-all font-[family-name:var(--font-body)]"
         >
           {loading ? '...' : 'Search'}
@@ -78,7 +84,7 @@ export default function AffordabilityCard({ initialBudget, delay = 0 }: Affordab
           </p>
           {result.possibleListings.length > 0 && (
             <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-              {result.possibleListings.slice(0, 10).map((l: any, i: number) => (
+              {result.possibleListings.slice(0, 10).map((l: MarketplaceListing, i: number) => (
                 <a key={i} href={l.url || '#'} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-3 p-2.5 rounded-lg bg-teal-50/30 border border-teal-100/20 hover:bg-teal-50/60 transition-all group">
                   <div className="w-12 h-12 rounded-lg bg-rose-100/50 flex items-center justify-center shrink-0">

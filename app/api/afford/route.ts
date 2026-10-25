@@ -14,7 +14,11 @@ export async function POST(req: NextRequest) {
 
     // Features 5 & 6
     const affordability = whatCanIAfford(budget, city, minRooms);
-    const comparison = getPropertyComparison(body.address || '', body.area, body.rooms);
+    const comparison = getPropertyComparison(
+      typeof body.address === 'string' ? body.address : '',
+      Number(body.area) > 0 ? Number(body.area) : undefined,
+      Number(body.rooms) > 0 ? Number(body.rooms) : undefined
+    );
 
     return NextResponse.json({
       success: true,
@@ -24,7 +28,7 @@ export async function POST(req: NextRequest) {
         comparison: comparison.slice(0, 8),
       },
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ success: false, error: 'Internal error' }, { status: 500 });
   }
 }

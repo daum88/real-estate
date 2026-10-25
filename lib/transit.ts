@@ -63,15 +63,11 @@ export async function getTransitScore(params: {
 }): Promise<TransitScore | null> {
   if (ALL_TRANSIT_STOPS.length === 0) return null;
 
+  // Without coordinates we cannot compute a real distance — returning a
+  // fabricated "300 m / score 50" would misrepresent the data, so return
+  // null and let the UI hide the section.
   if (!params.coordinates) {
-    // Without coordinates, return a generic score
-    return {
-      score: 50,
-      nearestStopName: 'Nearest public transport stop',
-      nearestStopDistance: 300,
-      walkTimeMinutes: 3.6,
-      routes: [{ routeNumber: '', routeName: 'County bus service', type: 'bus', frequency: 'every 30–60 min', keyDestinations: ['County center'] }],
-    };
+    return null;
   }
 
   // Find the nearest stop from ALL stops across Estonia

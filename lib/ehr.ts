@@ -43,6 +43,16 @@ export async function getBuildingData(ehrCode: string): Promise<EhrBuildingData 
  *   }
  * }
  */
+/**
+ * NOTE: most EHR numeric fields arrive as JSON strings (e.g.
+ * suletud_netopind: "150.5") — always coerce before use.
+ */
+function toNum(v: unknown): number | undefined {
+  if (v === null || v === undefined || v === '') return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 function normalizeBuildingData(raw: Record<string, unknown>, ehrCode: string): EhrBuildingData {
   const ehitis = (raw.ehitis || raw) as Record<string, unknown>;
 
@@ -52,17 +62,17 @@ function normalizeBuildingData(raw: Record<string, unknown>, ehrCode: string): E
   const address = (andmed.taisaadress as string) || '';
   const status = (andmed.seisundTxt as string) || (andmed.seisund as string) || '';
   const statusCode = (andmed.seisund as string) || '';
-  const buildingYear = (andmed.esmaneKasutus as number) ||
-    (andmed.ehitiseEhitusaasta as number) ||
-    (andmed.esmaneKasutuselevotuAasta as number);
+  const buildingYear = toNum(andmed.esmaneKasutus) ??
+    toNum(andmed.ehitiseEhitusaasta) ??
+    toNum(andmed.esmaneKasutuselevotuAasta);
 
   // Map Estonian status codes and text to short codes
   const statusMap: Record<string, string> = {
     'Olemas': 'K', 'Ehitusel': 'E', 'Püstitamisel': 'E',
     'Kavandatav': 'P', 'Kavandatud': 'P',
-    'EHITIS_SEISUND_PYSTI': 'E', 'EHITIS_SEISUND_KASUTUSES': 'K',
-    'EHITIS_SEISUND_EHITUSEL': 'E', 'EHITIS_SEISUND_KAVAN': 'P',
-    'EHITIS_SEISUND_KAVANDATUD': 'P',
+    'EHITIS_SEISUND_OLEMA': 'K', 'EHITIS_SEISUND_PYSTI': 'E',
+    'EHITIS_SEISUND_KASUTUSES': 'K', 'EHITIS_SEISUND_EHITUSEL': 'E',
+    'EHITIS_SEISUND_KAVAN': 'P', 'EHITIS_SEISUND_KAVANDATUD': 'P',
     'Projekteerimisel': 'P', 'Lammutatud': 'L',
   };
   const shortStatus = statusMap[status] || statusMap[statusCode] || statusCode || 'K';
@@ -142,18 +152,25 @@ function normalizeBuildingData(raw: Record<string, unknown>, ehrCode: string): E
   const cadastralCode = katastriList.length > 0 ? (katastriList[0] as Record<string, unknown>).katastritunnus as string : undefined;
 
   const technicalParameters: TechnicalParameters = {
-    totalArea: (tp.suletud_netopind || tp.ehitisePindala || tp.pindala) as number | undefined,
-    closedNetArea: (tp.suletud_netopind || tp.suletudNetopind) as number | undefined,
+    totalArea: toNum(tp.suletud_netopind ?? tp.ehitisePindala ?? tp.pindala),
+    closedNetArea: toNum(tp.suletud_netopind ?? tp.suletudNetopind),
     buildingYear: buildingYear as number | undefined,
-    floors: (tp.maxKorrusteArv || tp.maapealseteKorrusteArv) as number | undefined,
-    height: (tp.korgus || tp.ehitiseKorgus) as number | undefined,
+    floors: toNum(tp.maxKorrusteArv ?? tp.maapealseteKorrusteArv),
+    height: toNum(tp.korgus ?? tp.ehitiseKorgus),
     buildingMaterial: materials.length > 0 ? materials.join(', ') : undefined,
     heatingSystem: heatingSystems.length > 0 ? heatingSystems.join(', ') : undefined,
   };
 
-  // Building type from EHR
+  // Building type from EHR.
+  // NOTE: 'elamu' alone matches apartment buildings too ('Korterelamu',
+  // 'Muu kolme või enama korteriga elamu'), so match house-only types
+  // explicitly and exclude anything containing 'korter'.
   const buildingType = (andmed.kaosIdTxt as string) || (andmed.nimetus as string) || '';
-  const isHouse = buildingType.includes('Üksikelamu') || buildingType.includes('elamu');
+  const HOUSE_TYPES = ['Üksikelamu', 'Kaksikelamu', 'Ridaelamu', 'Taluelamu', 'Suvila', 'Aiamaja'];
+  const isHouse =
+    !/korter/i.test(buildingType) &&
+    HOUSE_TYPES.some((t) => buildingType.toLowerCase().includes(t.toLowerCase()));
+  const isApartmentBuilding = /korter/i.test(buildingType);
 
   return {
     ehrCode,
@@ -161,6 +178,7 @@ function normalizeBuildingData(raw: Record<string, unknown>, ehrCode: string): E
     status: shortStatus,
     buildingType,
     isHouse,
+    isApartmentBuilding,
     documents,
     energyCertificates,
     technicalParameters,

@@ -9,6 +9,7 @@ interface ScrapedListing {
   area: number; rooms: number; floor: string; year: number;
   addressRaw: string; energyClass?: string; heating?: string;
   material?: string; condition?: string; ownership?: string;
+  lat?: number; lon?: number;
 }
 
 interface ParsedListing extends ScrapedListing {
@@ -23,10 +24,9 @@ interface ParsedListing extends ScrapedListing {
 // ═══════════════════════════════════════════════════════════════
 
 let _db: ParsedListing[] | null = null;
-let _dbTime = 0;
 
 function loadDB(): ParsedListing[] {
-  if (_db && (Date.now() - _dbTime) < 30000) return _db;
+  if (_db) return _db;
   try {
     if (!fs.existsSync(DB_PATH)) return (_db = []);
     const raw = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
@@ -34,7 +34,6 @@ function loadDB(): ParsedListing[] {
     _db = listings.map(parseAddress).filter(l => 
       l.priceEur > 0 && l.area > 0 && l.area < 400 && l.pricePerSqm > 100
     );
-    _dbTime = Date.now();
     return _db;
   } catch { return (_db = []); }
 }
@@ -85,6 +84,20 @@ function norm(s: string): string {
     .replace(/[^a-z0-9]/g, ' ');
 }
 
+/** Great-circle distance in meters (Haversine). */
+export function haversineMeters(
+  lat1: number, lon1: number, lat2: number, lon2: number
+): number {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Find listings near an address
 // ═══════════════════════════════════════════════════════════════
@@ -109,7 +122,8 @@ export function findNearbyListings(
   buildingArea?: number,
   buildingRooms?: number,
   limit = 15,
-  isHouse?: boolean
+  isHouse?: boolean,
+  coordinates?: { lat: number; lon: number }
 ): NearbyResult {
   let db = loadDB();
   
@@ -129,9 +143,12 @@ export function findNearbyListings(
   const cityPart = addrParts.find(p => p.includes('linn') || p.includes('vald') || p.includes('alevik')) || '';
   const cityName = cityPart.split(' ')[0]?.replace('linn', '').replace('vald', '') || '';
   const districtPart = addrParts.find(p => p.includes('linnaosa') || p.includes('asum')) || '';
-  const streetPart = addrParts[addrParts.length - 1]?.split(' ')[0] || '';
+  // The street is the FIRST comma-part of an In-ADS address
+  // (e.g. "Riia tn 2, Tartu linn, Tartu maakond"), not the last one.
+  const streetPart = (addrParts[0] || '').split(' ')[0] || '';
 
-  // Score each listing
+  // Score each listing: exact text matches first, then refine with
+  // real WGS84 distance when both the property and listing have coords.
   const scored = db.map(l => {
     let score = 0;
     const ln = norm(l.city + ' ' + l.district + ' ' + l.street + ' ' + l.addressRaw);
@@ -150,13 +167,24 @@ export function findNearbyListings(
       if (ln.includes(token)) score += 2;
     }
 
-    return { listing: l, score };
+    let distance: number | null = null;
+    if (coordinates && l.lat && l.lon) {
+      distance = haversineMeters(coordinates.lat, coordinates.lon, l.lat, l.lon);
+      // Proximity bonus: full marks under 500m, fading out by 5km
+      if (distance <= 500) score += 40;
+      else if (distance <= 1000) score += 30;
+      else if (distance <= 2000) score += 20;
+      else if (distance <= 5000) score += 8;
+      else if (distance > 5000) score -= 30; // wrong city/region — penalize
+    }
+
+    return { listing: l, score, distance };
   });
 
   // Get scored matches
   const matches = scored
     .filter(s => s.score >= 5)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || (a.distance ?? Infinity) - (b.distance ?? Infinity))
     .slice(0, limit);
 
   // If no good matches, use city-level matches
@@ -295,6 +323,8 @@ function toMarketplace(l: ParsedListing): MarketplaceListing {
     energyClass: l.energyClass || '',
     heating: l.heating || '',
     material: l.material || '',
+    lat: l.lat,
+    lon: l.lon,
   };
 }
 
@@ -514,11 +544,15 @@ export function whatCanIAfford(budget: number, city?: string, minRooms?: number)
   const top = matches.slice(0, 50);
 
   const avgArea = top.length > 0 ? Math.round(top.reduce((s,l) => s + l.area, 0) / top.length) : 0;
-  // Get clean city names — parse from raw address since city field may be garbled
+  // Get clean city names — parse from raw address since city field may be garbled.
   const cityNames = [...new Set(top.map(l => {
     const parts = (l.addressRaw || '').split(',').map(p => p.trim());
-    return parts[2] || parts[1] || '';
-  }).filter(Boolean))];
+    const raw = parts[2] || parts[1] || '';
+    return raw
+      .replace(/\s*(linn|vald|alev|alevik)$/, '')   // strip municipality suffix
+      .replace(/\s+/g, ' ')
+      .trim();
+  }).filter((c): c is string => Boolean(c)))];
 
   return {
     budget,
@@ -575,6 +609,7 @@ export function getPortalSearchUrls(address: string): { portal: string; url: str
 
 export async function getMarketplaceListings(params: {
   address?: string; buildingArea?: number; isHouse?: boolean;
+  coordinates?: { lat: number; lon: number };
 }): Promise<{
   listings: MarketplaceListing[];
   portalUrls: { portal: string; url: string }[];
@@ -587,7 +622,9 @@ export async function getMarketplaceListings(params: {
   priceTrend: PriceTrend[];
 }> {
   const address = params.address || '';
-  const result = findNearbyListings(address, params.buildingArea, undefined, 15, params.isHouse);
+  const result = findNearbyListings(
+    address, params.buildingArea, undefined, 15, params.isHouse, params.coordinates
+  );
 
   // Feature 1: Apartment-level estimate (use 60m² as default for apartments)
   const aptArea = params.buildingArea && params.buildingArea < 500 ? params.buildingArea : 60;

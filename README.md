@@ -73,6 +73,9 @@ estimated).
 
 - AVM MAPE ~28.7% — trained on asking prices only, not transaction prices
 - The AVM is conservative: residual corrections are small, so predictions stay close to the median €/m² (~€2,844)
-- Only ~63% of listings have precise In-ADS coordinates
-- KV.ee detail pages are reCAPTCHA-protected, so heating type, exact room count and broker info
-  are unavailable for most listings
+- Only ~63% of listings have precise In-ADS coordinates in the AVM training set (87% of the runtime dataset has lat/lon; the marketplace comparable search uses real distances when both sides have coordinates)
+- Room count is present on only ~7.7% of sale listings — "same room count" comparables and the AVM room features are sparse
+- KV.ee detail pages are reCAPTCHA-protected, so heating type, exact room count and broker info are unavailable for most listings
+- EHR v3 `buildingData` currently returns no permit documents or energy certificates for most buildings — permit/energy status falls back to "no records on record" rather than a false verdict
+- KÜ health and developer lookup use a small static registry cache; the live e-Äriregister X-Road gateway is not integrated. Unknown addresses return null (shown as "no data") instead of fabricated values
+- Chimney-sweep certificates use a deterministic heuristic fallback until the Päästeamet feed is integrated

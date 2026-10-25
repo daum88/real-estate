@@ -18,6 +18,7 @@ export default function AddressSearch({ onSelect, isLoading }: AddressSearchProp
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const requestSeqRef = useRef(0);
 
   const searchAddresses = useCallback(async (q: string) => {
     if (q.length < 2) {
@@ -26,6 +27,8 @@ export default function AddressSearch({ onSelect, isLoading }: AddressSearchProp
       return;
     }
 
+    // Stale-response guard: only the latest request may update state.
+    const seq = ++requestSeqRef.current;
     setIsSearching(true);
     try {
       const res = await fetch(
@@ -33,28 +36,39 @@ export default function AddressSearch({ onSelect, isLoading }: AddressSearchProp
       );
       if (!res.ok) throw new Error('Search failed');
       const raw = await res.json();
+      if (seq !== requestSeqRef.current) return; // a newer request superseded us
 
       const results: InAdsAddress[] = Array.isArray(raw.addresses)
-        ? raw.addresses.map((item: Record<string, unknown>) => ({
-            adr_id: item.adr_id as number,
-            address: (item.taisaadress || item.pikkaadress || item.aadresstekst) as string,
-            katastritunnus: item.katastritunnus as string | undefined,
-            ehrCode: (item.tunnus as string) || undefined,
-            x: Number(item.viitepunkt_x) || undefined,
-            y: Number(item.viitepunkt_y) || undefined,
-            lat: Number(item.viitepunkt_b) || undefined,
-            lon: Number(item.viitepunkt_l) || undefined,
-          }))
+        ? raw.addresses.map((item: Record<string, unknown>) => {
+            const tunnus = String(item.tunnus || '');
+            const isBuildingEntry =
+              item.liik === 'E' || item.liik === 'EHITISHOONE' || /^\d+$/.test(tunnus);
+            return {
+              adr_id: item.adr_id as number,
+              address: (item.taisaadress || item.pikkaadress || item.aadresstekst) as string,
+              katastritunnus:
+                (item.katastritunnus as string) || (!isBuildingEntry ? tunnus : undefined),
+              // Only use `tunnus` as an EHR code for building entries;
+              // cadastral-unit entries carry the katastritunnus there instead.
+              ehrCode: isBuildingEntry ? tunnus : undefined,
+              x: Number(item.viitepunkt_x) || undefined,
+              y: Number(item.viitepunkt_y) || undefined,
+              lat: Number(item.viitepunkt_b) || undefined,
+              lon: Number(item.viitepunkt_l) || undefined,
+            };
+          })
         : [];
 
       setSuggestions(results);
       setIsOpen(results.length > 0);
       setSelectedIndex(-1);
     } catch {
-      setSuggestions([]);
-      setIsOpen(false);
+      if (seq === requestSeqRef.current) {
+        setSuggestions([]);
+        setIsOpen(false);
+      }
     } finally {
-      setIsSearching(false);
+      if (seq === requestSeqRef.current) setIsSearching(false);
     }
   }, []);
 
@@ -105,7 +119,10 @@ export default function AddressSearch({ onSelect, isLoading }: AddressSearchProp
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, []);
 
   return (

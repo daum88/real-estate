@@ -54,6 +54,11 @@ export default function BuildingHealthCard({
     (d) => d.documentType.toUpperCase() === 'KASUTUSLUBA'
   ).length;
 
+  // EHR's v3 buildingData endpoint does not currently return permit
+  // documents for most buildings (empty ehitiseDokumendid array), so
+  // distinguish "no permit found" from "no records available at all".
+  const hasDocumentRecords = building.documents.length > 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 32 }}
@@ -91,10 +96,15 @@ export default function BuildingHealthCard({
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
             <span className="text-xs font-medium text-emerald-700">Active</span>
           </div>
-        ) : (
+        ) : hasDocumentRecords ? (
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-full">
             <ShieldAlert className="w-4 h-4 text-amber-500" />
             <span className="text-xs font-medium text-amber-700">Pending</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200/60 rounded-full">
+            <ShieldAlert className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-medium text-gray-600">No EHR Records</span>
           </div>
         )}
       </div>
@@ -110,7 +120,9 @@ export default function BuildingHealthCard({
         <p className="text-sm text-teal-600/80 ml-8 font-[family-name:var(--font-body)]">
           {hasOccupancyPermit
             ? `Active — ${permitCount} permit${permitCount !== 1 ? 's' : ''} on record`
-            : 'No valid occupancy permit found.'}
+            : hasDocumentRecords
+              ? 'No valid occupancy permit found among EHR documents.'
+              : 'EHR building data has no permit documents on record.'}
           {ehrCode && (
             <a
               href={`https://livekluster.ehr.ee/api/building/v3/buildingData?ehr_code=${ehrCode}`}

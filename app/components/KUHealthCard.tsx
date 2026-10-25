@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   XCircle,
   FileText,
-  Euro,
   Users,
   ExternalLink,
 } from 'lucide-react';

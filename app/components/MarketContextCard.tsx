@@ -3,11 +3,13 @@
 import { motion } from 'framer-motion';
 import {
   AlertTriangle, ExternalLink, BarChart3, Search, Building2,
-  TrendingUp, DollarSign, Home, Maximize, Calendar, Zap,
+  TrendingUp, DollarSign, Home, Maximize, Zap,
 } from 'lucide-react';
 import type { DistrictPriceData, MarketplaceListing, SpatialConstraint } from '@/lib/types';
 
 interface PriceStats { median: number; avg: number; min: number; max: number; count: number; medianPerSqm: number; }
+
+interface ModelInfo { available: boolean; trees: number; features: string[]; }
 
 interface MarketContextCardProps {
   districtPrice: DistrictPriceData | null;
@@ -18,7 +20,7 @@ interface MarketContextCardProps {
   similarByRooms: MarketplaceListing[];
   similarByArea: MarketplaceListing[];
   apartmentEstimate: { estimatedTotal: number; estimatedPerSqm: number; comparableCount: number; comparables: MarketplaceListing[] } | null;
-  mlEstimate: { estimatedTotal: number; estimatedPerSqm: number; modelInfo: any } | null;
+  mlEstimate: { estimatedTotal: number; estimatedPerSqm: number; modelInfo: ModelInfo | null } | null;
   energyDistribution: { total: number; classes: { class: string; count: number; pct: number }[] } | null;
   priceTrend: { label: string; avgPricePerSqm: number; count: number }[];
   constraints: SpatialConstraint[];
@@ -38,8 +40,8 @@ function fmtEur(n: number): string {
 }
 
 export default function MarketContextCard({
-  districtPrice, marketplaceListings, portalSearchUrls,
-  priceStats, estimatedValue, similarByRooms, similarByArea,
+  marketplaceListings, portalSearchUrls,
+  priceStats, estimatedValue, similarByRooms,
   apartmentEstimate, energyDistribution, priceTrend, mlEstimate,
   constraints, buildingArea, displayArea, delay = 0,
 }: MarketContextCardProps) {
@@ -81,7 +83,7 @@ export default function MarketContextCard({
               <div className="mt-4 pt-4 border-t border-indigo-200/50">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-indigo-500 font-[family-name:var(--font-body)]">
-                    Estimated value ({(displayArea || buildingArea)} m² × median {priceStats.medianPerSqm} €/m²)
+                    Estimated value ({displayArea || buildingArea} m² × median {priceStats.medianPerSqm} €/m²)
                   </span>
                   <span className="text-xl font-bold text-indigo-700 font-[family-name:var(--font-heading)]">
                     {fmtEur(estimatedValue)}

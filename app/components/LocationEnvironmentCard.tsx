@@ -6,17 +6,12 @@ import {
   Radiation,
   Volume2,
   GraduationCap,
-  MapPin,
-  Trees,
   Sprout,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
   ExternalLink,
   Waves,
   Construction,
 } from 'lucide-react';
-import type { TransitScore, EnvironmentalProfile, SchoolProximity, MunicipalPlan, AgriculturalParcel, SpatialConstraint } from '@/lib/types';
+import type { TransitScore, EnvironmentalProfile, SchoolProximity, MunicipalPlan, AgriculturalParcel } from '@/lib/types';
 
 interface LocationEnvironmentCardProps {
   transitScore: TransitScore | null;
@@ -24,7 +19,6 @@ interface LocationEnvironmentCardProps {
   schools: SchoolProximity[];
   municipalPlans: MunicipalPlan[];
   agriculturalParcels: AgriculturalParcel[];
-  constraints: SpatialConstraint[];
   delay?: number;
 }
 
@@ -48,7 +42,6 @@ export default function LocationEnvironmentCard({
   schools,
   municipalPlans,
   agriculturalParcels,
-  constraints,
   delay = 0,
 }: LocationEnvironmentCardProps) {
   return (
@@ -174,7 +167,7 @@ export default function LocationEnvironmentCard({
 
         {/* ── Municipal Plans ── */}
         {municipalPlans.length > 0 && (
-          <SectionBlock icon={<Construction className="w-4 h-4" />} title="Municipal Plans (Kambja vald)">
+          <SectionBlock icon={<Construction className="w-4 h-4" />} title="Municipal Plans">
             <div className="space-y-2">
               {municipalPlans.slice(0, 3).map((plan, i) => (
                 <a

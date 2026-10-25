@@ -50,6 +50,7 @@ export interface EhrBuildingData {
   status: string;
   buildingType?: string;
   isHouse?: boolean;
+  isApartmentBuilding?: boolean;
   documents: EhrDocument[];
   energyCertificates: EnergyCertificate[];
   technicalParameters: TechnicalParameters;
@@ -169,12 +170,22 @@ export interface MarketplaceListing {
   energyClass?: string;
   heating?: string;
   material?: string;
+  lat?: number;
+  lon?: number;
+  distanceMeters?: number;
 }
 
 export interface PriceChange {
   date: string;
   price: number;
   changePercent: number;
+}
+
+// ─── ML Model ──────────────────────────────────────────────────
+export interface MlModelInfo {
+  available: boolean;
+  trees: number;
+  features: string[];
 }
 
 // ─── Combined Dashboard Payload ──────────────────────────────────
@@ -217,7 +228,7 @@ export interface DashboardData {
   similarByRooms: MarketplaceListing[];
   similarByArea: MarketplaceListing[];
   apartmentEstimate: { estimatedTotal: number; estimatedPerSqm: number; comparableCount: number; comparables: MarketplaceListing[] } | null;
-  mlEstimate: { estimatedTotal: number; estimatedPerSqm: number; modelInfo: any } | null;
+  mlEstimate: { estimatedTotal: number; estimatedPerSqm: number; modelInfo: MlModelInfo | null } | null;
   energyDistribution: { total: number; classes: { class: string; count: number; pct: number }[] } | null;
   priceTrend: { label: string; avgPricePerSqm: number; count: number }[];
 
@@ -231,6 +242,9 @@ export interface LookupRequest {
   adrId?: number;
   ehrCode?: string;
   registrikood?: string;        // for KÜ/developer direct lookup
+  lat?: number;                 // WGS84 from the In-ADS suggestion
+  lon?: number;
+  katastritunnus?: string;
 }
 
 export interface LookupResponse {

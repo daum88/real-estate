@@ -18,12 +18,10 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedAddress, setSelectedAddress] = useState<string>('');
 
   const handleAddressSelect = useCallback(async (address: InAdsAddress) => {
     setError(null);
     setIsLoading(true);
-    setSelectedAddress(address.address);
 
     try {
       const res = await fetch('/api/lookup', {
@@ -33,6 +31,11 @@ export default function Dashboard() {
           address: address.address,
           adrId: address.adr_id || undefined,
           ehrCode: address.ehrCode || undefined,
+          // Forward coordinates from the In-ADS suggestion so the server can
+          // compute real distances (transit, schools, spatial comparables).
+          lat: address.lat,
+          lon: address.lon,
+          katastritunnus: address.katastritunnus,
         }),
       });
 
@@ -47,7 +50,7 @@ export default function Dashboard() {
           setError(json.data.errors.join(' '));
         }
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please check your connection and try again.');
       setData(null);
     } finally {
@@ -154,7 +157,7 @@ export default function Dashboard() {
                   </div>
                   {data.building?.ehrCode && (
                     <a
-                      href={`https://livekluster.ehr.ee/api/building/v3/buildingData?ehrCode=${data.building.ehrCode}`}
+                      href={`https://livekluster.ehr.ee/api/building/v3/buildingData?ehr_code=${data.building.ehrCode}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="
@@ -197,7 +200,6 @@ export default function Dashboard() {
                     schools={data.schools}
                     municipalPlans={data.municipalPlans}
                     agriculturalParcels={data.agriculturalParcels}
-                    constraints={data.constraints}
                     delay={0.2}
                   />
 
@@ -219,7 +221,11 @@ export default function Dashboard() {
                     energyDistribution={data.energyDistribution}
                     priceTrend={data.priceTrend}
                     constraints={data.constraints}
-                    buildingArea={data.building?.technicalParameters?.closedNetArea}
+                    buildingArea={
+                      data.building?.isApartmentBuilding
+                        ? undefined
+                        : data.building?.technicalParameters?.closedNetArea
+                    }
                     displayArea={data.estimatedApartmentArea}
                     delay={0.3}
                   />
@@ -233,7 +239,12 @@ export default function Dashboard() {
                 <InvestmentCard
                   address={data.address}
                   estimatedValue={data.estimatedValue || undefined}
-                  buildingArea={data.estimatedApartmentArea || data.building?.technicalParameters?.closedNetArea}
+                  buildingArea={
+                    data.estimatedApartmentArea ||
+                    (data.building?.isApartmentBuilding
+                      ? undefined
+                      : data.building?.technicalParameters?.closedNetArea)
+                  }
                   delay={0.4}
                 />
               </div>

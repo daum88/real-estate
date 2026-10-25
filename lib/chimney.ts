@@ -27,6 +27,25 @@ const REQUIRES_CHIMNEY_SWEEP = [
 ];
 
 /**
+ * Deterministic fallback: derive a stable pseudo-status from the address so
+ * the same property always renders the same result (no Math.random()).
+ * Real certificate data must come from Päästeamet in production.
+ */
+function deterministicStatus(address: string): {
+  valid: boolean;
+  lastInspectionMonthsAgo: number;
+} {
+  let hash = 0;
+  for (let i = 0; i < address.length; i++) {
+    hash = (hash * 31 + address.charCodeAt(i)) >>> 0;
+  }
+  return {
+    valid: hash % 100 > 15, // ~85% valid, stable per address
+    lastInspectionMonthsAgo: hash % 11, // 0–10 months ago
+  };
+}
+
+/**
  * Determine if a chimney sweep certificate is required and its status.
  */
 export async function getChimneySweepStatus(params: {
@@ -43,11 +62,8 @@ export async function getChimneySweepStatus(params: {
     return null; // Not applicable for this property
   }
 
-  // Simulate certificate status based on building attributes
-  // In production: query Päästeamet API with ehrCode or address
-  const isNewBuilding = params.buildingStatus === 'E'; // Under construction
-
-  if (isNewBuilding) {
+  // Under construction — certificate not yet required
+  if (params.buildingStatus === 'E') {
     return {
       valid: false,
       systemType: params.heatingSystem,
@@ -55,18 +71,20 @@ export async function getChimneySweepStatus(params: {
     };
   }
 
-  // Simulate: most properties have valid certs
-  const valid = Math.random() > 0.15;
+  // Deterministic fallback for the MVP (no live Päästeamet feed yet).
+  const status = deterministicStatus(params.address || params.heatingSystem || 'unknown');
   const lastInspection = new Date();
-  lastInspection.setMonth(lastInspection.getMonth() - Math.floor(Math.random() * 11));
+  lastInspection.setMonth(lastInspection.getMonth() - status.lastInspectionMonthsAgo);
 
   const nextDue = new Date(lastInspection);
   nextDue.setFullYear(nextDue.getFullYear() + 1);
 
   return {
-    valid,
+    valid: status.valid,
     lastInspectionDate: lastInspection.toISOString().split('T')[0],
-    nextInspectionDue: valid ? nextDue.toISOString().split('T')[0] : 'Overdue — inspection needed',
+    nextInspectionDue: status.valid
+      ? nextDue.toISOString().split('T')[0]
+      : 'Overdue — inspection needed',
     systemType: params.heatingSystem,
   };
 }

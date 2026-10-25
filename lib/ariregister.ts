@@ -176,17 +176,10 @@ export async function getKUHealth(params: {
       return STATIC_KU['80789012'];
     }
 
-    // Default: for any address, return a generic healthy KÜ if it seems urban
-    if (addr.includes('tallinn') || addr.includes('tartu') || addr.includes('pärnu')) {
-      return {
-        registrikood: '',
-        name: `KÜ ${params.address.split(',')[0]}`.trim(),
-        status: 'R',
-        taxDebt: 0,
-        annualReportUpToDate: true,
-        lastAnnualReportYear: 2024,
-      };
-    }
+    // No live KÜ feed is integrated yet (e-Äriregister X-Road gateway).
+    // Returning a fabricated "generic healthy KÜ" for every urban address
+    // would misrepresent registry data, so return null instead — the UI
+    // shows an explicit "no KÜ data found" state.
   }
 
   return null;

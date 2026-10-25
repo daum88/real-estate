@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Node tooling runs outside the Next.js toolchain (CommonJS by design):
+    "scripts/**",
+    "tests/**",
   ]),
 ]);
 

@@ -33,15 +33,6 @@ const CONSTRAINT_HEURISTICS: Record<string, SpatialConstraint[]> = {
   'default': [] as SpatialConstraint[],
 };
 
-const GENERAL_CONSTRAINTS: SpatialConstraint[] = [
-  {
-    type: 'utility_easement',
-    label: 'Public Water Supply Protection Zone',
-    description: 'Ühisveevärgi sanitaarkaitseala — restrictions on construction near public water extraction points.',
-    severity: 'low',
-  },
-];
-
 export async function getSpatialConstraints(params: {
   katastritunnus?: string;
   address?: string;
@@ -97,7 +88,9 @@ export async function getSpatialConstraints(params: {
     return true;
   });
 
-  return [...unique, ...GENERAL_CONSTRAINTS];
+  // Only return constraints we actually derived from the cadastral region or
+  // address keywords — no invented defaults.
+  return unique;
 }
 
 // ─── District Price Data ─────────────────────────────────────────
