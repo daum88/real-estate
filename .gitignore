@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# derived / training artifacts
+data/features.json
+data/geo_cache.json
+data/rental_yields.json
+
+# unused model variants (runtime model is avm_v4.json)
+public/models/avm_v3*.json
+public/models/avm_apartments_*.json
+public/models/avm_houses_*.json
+public/models/avm_p10.json
+public/models/avm_p50.json
+public/models/avm_p90.json

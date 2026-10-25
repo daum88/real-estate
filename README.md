@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kinnisvara Dashboard
 
-## Getting Started
+A due-diligence dashboard for Estonian real estate. Enter an address and get everything in
+one place: building data, permits and energy class, spatial constraints, apartment-association
+(KÜ) health, nearby transit and schools, municipal plans, environmental risk, and an ML-based
+market valuation.
 
-First, run the development server:
+## What it does
+
+- **Address search** (In-ADS) — resolves an address to coordinates, cadastral number and building code
+- **Building data** (EHR) — year built, area, floors, occupancy permit, energy certificate
+- **Spatial constraints** (Maa-amet) — flood zones, heritage areas, utility easements
+- **Apartment-association health** (e-Äriregister) — tax debt, developer lookup
+- **Environment** — radon, noise and flood risk profile
+- **Location** — GTFS transit stops, EHIS schools, municipal plans, PRIA agricultural parcels
+- **Marketplace** — 21,000+ scraped KV.ee listings (sale + rent) with comparable analysis
+- **Valuation** — XGBoost automated valuation model (€/m²) with a weighted-comparable fallback
+- **Affordability** — what fits a given budget, plus property comparison
+
+## Tech stack
+
+- Next.js 16 (App Router) · React 19 · TypeScript
+- Tailwind CSS 4 · Framer Motion · Lucide icons
+- Pure-JavaScript XGBoost inference (no Python needed at runtime)
+- Live Estonian government APIs (no authentication required)
+
+## The valuation model (AVM)
+
+- XGBoost (gradient-boosted trees) trained on ~8,000 apartment listings scraped from KV.ee
+- Predicts €/m² from 16 features: area, rooms, year, energy class, location, comparable prices, …
+- 5-fold cross-validation: **MAPE ~28.7%** vs **60.3%** for a comparable-average baseline (~52% better)
+- Runtime model: `public/models/avm_v4.json`, evaluated in JS by `lib/ml-model.js`
+- Training pipeline: `lib/build-features.js` (feature matrix) + `lib/train_model.py` (XGBoost → JSON)
+
+## Data sources
+
+| Source | Data |
+|---|---|
+| KV.ee (scraped) | 21,619 sale + rental listings |
+| EHR | building specs, permits, energy certificates |
+| In-ADS | geocoding, cadastral numbers |
+| Maa-amet | spatial constraints, district median prices |
+| e-Äriregister | KÜ health, tax debt, developer info |
+| GTFS / EHIS / municipal plans | transit, schools, planning data |
+| PRIA | agricultural parcels |
+
+## API routes
+
+| Route | Description |
+|---|---|
+| `POST /api/lookup` | full due-diligence report for an address |
+| `POST /api/valuate` | ML + comparable valuation, rental yield |
+| `POST /api/afford` | affordability + property comparison |
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The runtime data (`data/all_listings.json`, `data/rentals.json`) and the trained model
+(`public/models/avm_v4.json`) are included, so the app works out of the box. Re-scraping uses
+the scripts in `lib/` (KV.ee detail pages are reCAPTCHA-protected, which is why some fields are
+estimated).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Known limitations
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- AVM MAPE ~28.7% — trained on asking prices only, not transaction prices
+- Only ~63% of listings have precise In-ADS coordinates
+- KV.ee detail pages are reCAPTCHA-protected, so heating type, exact room count and broker info
+  are unavailable for most listings
