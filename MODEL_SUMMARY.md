@@ -77,7 +77,7 @@ XGBoost regression model for automated property valuation in Estonia. Predicts p
 
 ## Deployment
 
-- **Model file**: `public/models/avm_v3_all.json` (1,200 trees, ~5MB)
+- **Model file**: `public/models/avm_v3_all.json` (1,200 trees, ~6.8MB)
 - **Inference**: Pure JavaScript tree evaluator in `lib/ml-model.js`
 - **API**: Integrated into `POST /api/valuate` — returns `data.ml` alongside comparable valuation
 - **Fallback**: Weighted comparable model in `lib/marketplace.ts → valuateProperty()`

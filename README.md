@@ -27,10 +27,10 @@ market valuation.
 ## The valuation model (AVM)
 
 - XGBoost (gradient-boosted trees) trained on ~8,000 apartment listings scraped from KV.ee
-- Predicts €/m² from 16 features: area, rooms, year, energy class, location, comparable prices, …
+- Predicts €/m² from 20 features: area, rooms, year, energy class, location, comparable prices, amenities, …
 - 5-fold cross-validation: **MAPE ~28.7%** vs **60.3%** for a comparable-average baseline (~52% better)
-- Runtime model: `public/models/avm_v4.json`, evaluated in JS by `lib/ml-model.js`
-- Training pipeline: `lib/build-features.js` (feature matrix) + `lib/train_model.py` (XGBoost → JSON)
+- Runtime model: `public/models/avm_v3_all.json` (~1,200 trees), evaluated in JS by `lib/ml-model.js`
+- Training: XGBoost — feature engineering in `lib/build-features.js`, training script in `lib/train_model.py`
 
 ## Data sources
 
@@ -62,7 +62,7 @@ npm run dev
 Open http://localhost:3000.
 
 The runtime data (`data/all_listings.json`, `data/rentals.json`) and the trained model
-(`public/models/avm_v4.json`) are included, so the app works out of the box. Re-scraping uses
+(`public/models/avm_v3_all.json`) are included, so the app works out of the box. Re-scraping uses
 the scripts in `lib/` (KV.ee detail pages are reCAPTCHA-protected, which is why some fields are
 estimated).
 
